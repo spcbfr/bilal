@@ -12,8 +12,15 @@ datasource db {
     relationMode = "prisma"
 }
 
-model Example {
-    id        String   @id @default(cuid())
+model Post {
+
+    id Int @id @default(autoincrement())
     createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    content String @db.VarChar(255)
+    authorId String
+
+    // If used correctly, Indexes result in inifinitly more performant queries
+    // Especially as your data scales
+    // @see https://planetscale.com/blog/how-do-database-indexes-work
+    @@index([authorId]) 
 }
