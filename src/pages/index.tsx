@@ -1,8 +1,10 @@
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import Head from "next/head";
+import { api } from "~/utils/api";
 
 export default function Home() {
   const user = useUser();
+  const { data } = api.posts.getAll.useQuery();
   return (
     <>
       <Head>
@@ -13,7 +15,14 @@ export default function Home() {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main>{!user.isSignedIn ? <SignInButton /> : <SignOutButton />}</main>
+      <main>
+        {!user.isSignedIn ? <SignInButton /> : <SignOutButton />}
+        <section>
+          {data?.map((post) => (
+            <div key={post.id}>{post.content}</div>
+          ))}
+        </section>
+      </main>
     </>
   );
 }
