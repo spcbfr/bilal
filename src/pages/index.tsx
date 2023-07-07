@@ -12,7 +12,12 @@ import { Button } from "~/components/ui/button";
 export default function Home() {
   const { isLoaded } = useUser();
 
-  // User tends to load faster, return nothing until the user has loaded
+  /**
+   * User tends to load faster, return nothing until the user has loaded
+   * Here we are using `!isLoaded` instead of `!user`
+   * Because `isLoaded` would still evaluate to true even if the user wasn't logged in which is what we want
+   * if we had used `!user` instead we'd get an empty page if the user is logged out
+   */
   if (!isLoaded) return <div />;
   return (
     <>

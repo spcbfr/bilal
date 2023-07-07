@@ -1,13 +1,9 @@
 import { api } from "~/utils/api";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Skeleton } from "./ui/skeleton";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
 function BlobSkeleton() {
   return (
@@ -25,6 +21,7 @@ function BlobSkeleton() {
   );
 }
 export default function Feed() {
+  dayjs.extend(relativeTime);
   const { data, isLoading } = api.posts.getAll.useQuery();
   if (isLoading) return <BlobSkeleton />;
   return (
@@ -36,14 +33,14 @@ export default function Feed() {
               <AvatarImage src={author.profilePic} />
               <AvatarFallback>{author.username[0]}</AvatarFallback>
             </Avatar>
-            <CardTitle>Blob by {author.username}</CardTitle>
+            <CardTitle>
+              Blob by{" "}
+              {`${author.username} • ${dayjs(post.createdAt).fromNow()}`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p>{post.content}</p>
           </CardContent>
-          <CardFooter>
-            <p>{post.createdAt.toDateString()}</p>
-          </CardFooter>
         </Card>
       ))}
     </section>
