@@ -6,16 +6,6 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import {
-  currentUser,
-  getAuth,
-} from "@clerk/nextjs/dist/types/server-helpers.server";
-import { TRPCError, initTRPC } from "@trpc/server";
-import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
-import next from "next/types";
-import superjson from "superjson";
-import { ZodError } from "zod";
-import { prisma } from "~/server/db";
 
 /**
  * 1. CONTEXT
@@ -24,30 +14,37 @@ import { prisma } from "~/server/db";
  *
  * These allow you to access things when processing a request, like the database, the session, etc.
  */
+import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
+
+import { prisma } from "~/server/db";
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request
  * that goes through your tRPC endpoint.
  *
- * @see {@link https://trpc.io/docs/context}
+ * @see https://trpc.io/docs/context
  */
 export const createTRPCContext = (opts: CreateNextContextOptions) => {
-  const req = opts.req;
+  const { req } = opts;
   const sesh = getAuth(req);
-  const user = sesh.user;
+
+  const userId = sesh.userId;
+
   return {
     prisma,
-    currentUser: user,
+    userId,
   };
 };
 
 /**
  * 2. INITIALIZATION
  *
- * This is where the tRPC API is initialized, connecting the context and transformer. We also parse
- * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
- * errors on the backend.
+ * This is where the tRPC API is initialized, connecting the context and transformer.
  */
+import { initTRPC, TRPCError } from "@trpc/server";
+import superjson from "superjson";
+import { getAuth } from "@clerk/nextjs/server";
+import { ZodError } from "zod";
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
@@ -73,7 +70,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 /**
  * This is how you create new routers and sub-routers in your tRPC API.
  *
- * @see {@link https://trpc.io/docs/router}
+ * @see https://trpc.io/docs/router
  */
 export const createTRPCRouter = t.router;
 
@@ -86,23 +83,18 @@ export const createTRPCRouter = t.router;
  */
 export const publicProcedure = t.procedure;
 
-const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.currentUser) {
-    throw new TRPCError({ code: "UNAUTHORIZED", cause: "Not Authenticated" });
+const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.userId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+    });
   }
+
   return next({
     ctx: {
-      currentUser: currentUser,
+      userId: ctx.userId,
     },
   });
 });
 
-/**
- * @description Private (authenticated) procedure
- * When using this procedure you can be sure that a user session exists, i.e. a user is autthenticated
- * so you can access the User Object safely
- *
- * @throws TRPC error if no user exists
- * @see {@link enforceUserIsAuthed} for the auth checking implementation
- */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
+export const privateProcedure = t.procedure.use(enforceUserIsAuthed);
