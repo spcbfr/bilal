@@ -2,6 +2,7 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 import { clerkClient } from "@clerk/nextjs";
 import type { User } from "@clerk/nextjs/dist/types/server";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { getUserInitials } from "~/utils/initials";
 
 /**
